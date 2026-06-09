@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Camera di Crescita 4 — Prenotazioni</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',system-ui,sans-serif;background:#f5f7f2;color:#1a1a1a;min-height:100vh}
+.page{max-width:860px;margin:0 auto;padding:2rem 1rem 4rem}
+header{text-align:center;margin-bottom:1.5rem}
+header h1{font-size:22px;font-weight:600;color:#1f2e1a;letter-spacing:-.02em}
+header p{font-size:13px;color:#6b7a65;margin-top:4px}
+.sync-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:3px 10px;border-radius:20px;background:#e8f0e4;color:#3a6b35;margin-top:8px}
+.sync-badge.syncing{background:#fff3cd;color:#856404}
+.sync-badge.error{background:#fde8e8;color:#922020}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:currentColor}
+.legend{display:flex;gap:16px;justify-content:center;margin-top:10px;font-size:12px;color:#6b7a65}
+.legend span{display:flex;align-items:center;gap:5px}
+.dot{width:9px;height:9px;border-radius:50%}
+.dot-free{background:#4a9a3f}.dot-partial{background:#c07a10}.dot-busy{background:#c0392b}
+
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1.5rem}
+.stat{background:#fff;border-radius:10px;border:1px solid #e2e8df;padding:14px;text-align:center}
+.stat-n{font-size:26px;font-weight:600}
+.stat-n.free{color:#4a9a3f}.stat-n.partial{color:#c07a10}.stat-n.busy{color:#c0392b}
+.stat-l{font-size:11px;color:#888;margin-top:2px;text-transform:uppercase;letter-spacing:.04em}
+
+.room-wrap{background:#fff;border:1px solid #d8e4d4;border-radius:14px;padding:1.25rem;margin-bottom:1.5rem}
+.room-title{font-size:11px;color:#9aaa95;letter-spacing:.06em;text-transform:uppercase;text-align:center;margin-bottom:1rem}
+.room{display:grid;grid-template-columns:160px 1fr 160px;grid-template-rows:auto auto;gap:10px}
+.wall{background:#f5f7f2;border:1px dashed #c8d8c4;border-radius:10px;padding:10px 8px}
+.wall-label{font-size:10px;color:#9aaa95;letter-spacing:.07em;text-transform:uppercase;text-align:center;margin-bottom:8px}
+.shelves-v{display:flex;flex-direction:column;gap:6px;align-items:center}
+.center{grid-column:2/3;grid-row:1/2;display:flex;align-items:center;justify-content:center}
+.center-text{font-size:12px;color:#b0bfaa;text-align:center}
+.wall-bottom-wrap{grid-column:1/4;grid-row:2/3}
+.wall-bottom{background:#f5f7f2;border:1px dashed #c8d8c4;border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:14px}
+.bottom-label{font-size:10px;color:#9aaa95;letter-spacing:.07em;text-transform:uppercase;white-space:nowrap}
+
+.shelf{display:flex;align-items:center;gap:7px;width:140px;padding:9px 10px;border-radius:8px;border:1px solid #dde8da;background:#fff;cursor:pointer;font-family:inherit;transition:transform .1s,border-color .15s,background .15s}
+.shelf:hover{transform:scale(1.04);border-color:#8ab085}
+.shelf.free{border-color:#4a9a3f;background:#f0faf0}
+.shelf.busy{border-color:#c0392b;background:#fdf0f0}
+.shelf.partial{border-color:#c07a10;background:#fdf5e6}
+.shelf-ind{width:8px;height:8px;border-radius:50%;flex-shrink:0;background:#ccc}
+.shelf.free .shelf-ind{background:#4a9a3f}
+.shelf.busy .shelf-ind{background:#c0392b}
+.shelf.partial .shelf-ind{background:#c07a10}
+.shelf-id{font-size:12px;font-weight:600;color:#3a5e35;min-width:26px}
+.shelf.busy .shelf-id{color:#922020}
+.shelf.partial .shelf-id{color:#8a5610}
+.shelf-name{font-size:10px;color:#7a8a76;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.shelf-wide{display:flex;align-items:center;gap:10px;flex:1;padding:12px 16px;border-radius:8px;border:1px solid #dde8da;background:#fff;cursor:pointer;font-family:inherit;transition:transform .1s,border-color .15s,background .15s}
+.shelf-wide:hover{transform:scale(1.01);border-color:#8ab085}
+.shelf-wide.free{border-color:#4a9a3f;background:#f0faf0}
+.shelf-wide.busy{border-color:#c0392b;background:#fdf0f0}
+.shelf-wide.partial{border-color:#c07a10;background:#fdf5e6}
+.shelf-wide .shelf-ind{width:10px;height:10px;border-radius:50%;flex-shrink:0;background:#ccc}
+.shelf-wide.free .shelf-ind{background:#4a9a3f}
+.shelf-wide.busy .shelf-ind{background:#c0392b}
+.shelf-wide.partial .shelf-ind{background:#c07a10}
+.shelf-wide .shelf-id{font-size:13px;font-weight:600;color:#3a5e35}
+.shelf-wide.busy .shelf-id{color:#922020}
+.shelf-wide.partial .shelf-id{color:#8a5610}
+.shelf-wide .shelf-detail{flex:1;text-align:left}
+.shelf-wide .shelf-detail .sname{font-size:12px;color:#4a5a45;font-weight:500}
+.shelf-wide .shelf-detail .smeta{font-size:10px;color:#9aaa95;margin-top:2px}
+
+.list-section{background:#fff;border:1px solid #e2e8df;border-radius:12px;padding:1.25rem}
+.list-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:8px;flex-wrap:wrap}
+.list-title{font-size:14px;font-weight:600;color:#1f2e1a}
+.filters{display:flex;gap:6px}
+.filter-btn{font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid #d5e0d0;background:transparent;color:#7a8a76;cursor:pointer;font-family:inherit}
+.filter-btn:hover{background:#f0f5ee}
+.filter-btn.active{background:#3a6b35;color:#fff;border-color:#3a6b35}
+.booking-list{display:flex;flex-direction:column;gap:6px}
+.bk-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #edf2eb;border-radius:8px;background:#fafcf9}
+.bk-item:hover{border-color:#c8d8c4}
+.bk-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.bk-info{flex:1;min-width:0}
+.bk-name{font-size:13px;font-weight:500;color:#1a2a16}
+.bk-meta{font-size:11px;color:#8a9a85;margin-top:1px}
+.bk-del{background:none;border:none;cursor:pointer;color:#aabaa5;font-size:20px;padding:1px 5px;border-radius:5px;line-height:1;font-family:inherit}
+.bk-del:hover{color:#c0392b;background:#fde8e8}
+.empty{text-align:center;padding:2rem;color:#aabaa5;font-size:13px}
+
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:1000;align-items:center;justify-content:center}
+.overlay.open{display:flex}
+.modal{background:#fff;border-radius:14px;border:1px solid #d5e0d0;padding:1.75rem;width:340px;max-width:92vw;position:relative}
+.modal h3{font-size:17px;font-weight:600;color:#1f2e1a;margin-bottom:2px}
+.modal-sub{font-size:12px;color:#8a9a85;margin-bottom:1rem}
+.existing{background:#f5f7f2;border-radius:8px;padding:8px 10px;margin-bottom:12px;max-height:110px;overflow-y:auto}
+.existing-title{font-size:10px;color:#9aaa95;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
+.ex-item{font-size:11px;color:#3a5030;padding:3px 0;border-bottom:1px solid #e2e8df;display:flex;justify-content:space-between;align-items:center}
+.ex-item:last-child{border-bottom:none}
+.ex-del{background:none;border:none;cursor:pointer;color:#aabaa5;font-size:15px;padding:0 3px;font-family:inherit}
+.ex-del:hover{color:#c0392b}
+.field{margin-bottom:11px}
+.field label{display:block;font-size:11px;color:#8a9a85;margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}
+.field input{width:100%;padding:8px 10px;border:1px solid #d5e0d0;border-radius:7px;font-size:13px;font-family:inherit;color:#1a2a16;background:#fff}
+.field input:focus{outline:none;border-color:#4a9a3f;box-shadow:0 0 0 3px rgba(74,154,63,.12)}
+.modal-actions{display:flex;gap:8px;margin-top:1.25rem}
+.btn-cancel{padding:9px 14px;background:#f5f7f2;border:1px solid #d5e0d0;border-radius:8px;font-size:13px;cursor:pointer;color:#6b7a65;font-family:inherit}
+.btn-cancel:hover{background:#edf2eb}
+.btn-save{flex:1;padding:9px;background:#3a6b35;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit}
+.btn-save:hover{background:#2f5a2b}
+.btn-save:disabled{background:#9ab895;cursor:not-allowed}
+
+.config-notice{background:#fff8e6;border:1px solid #f0c040;border-radius:10px;padding:1rem 1.25rem;margin-bottom:1.5rem;font-size:13px;color:#6a4c00}
+.config-notice strong{font-weight:600;display:block;margin-bottom:4px}
+.config-notice code{background:#f0e8c0;padding:1px 5px;border-radius:4px;font-size:12px}
+
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:#1f2e1a;color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;z-index:2000;opacity:0;transform:translateY(10px);transition:opacity .25s,transform .25s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+
+@media(max-width:600px){
+  .room{grid-template-columns:1fr}
+  .wall{grid-column:1/2!important;grid-row:auto!important}
+  .center{display:none}
+  .wall-bottom-wrap{grid-column:1/2!important}
+  .shelves-v{flex-direction:row;flex-wrap:wrap;justify-content:center}
+  .shelf{width:calc(50% - 4px)}
+}
+</style>
+</head>
+<body>
+
+<!-- ════════════════ HTML ════════════════ -->
+<div class="page">
+  <header>
+    <h1>Camera di Crescita 4 — Prenotazioni</h1>
+    <p>CNR-IBBR &nbsp;·&nbsp; Portici (NA)</p>
+    <span class="sync-badge syncing" id="syncBadge"><span class="sync-dot"></span>Avvio…</span>
+    <div class="legend">
+      <span><span class="dot dot-free"></span>Libero</span>
+      <span><span class="dot dot-partial"></span>Parziale</span>
+      <span><span class="dot dot-busy"></span>Occupato</span>
+    </div>
+  </header>
+
+  <div class="config-notice" id="configNotice" style="display:none">
+    <strong>Modalità locale attiva</strong>
+    Le prenotazioni sono salvate solo su questo browser. Per condividerle con tutti, apri il file HTML
+    e inserisci le credenziali del tuo progetto Firebase al posto dei valori <code>INSERISCI_*</code>.
+    <a href="https://console.firebase.google.com" target="_blank" style="color:#6a4c00;font-weight:600"> → Firebase Console</a>
+  </div>
+
+  <div class="stats-row" id="statsRow"></div>
+
+  <div class="room-wrap">
+    <div class="room-title">mappa scaffali — clicca per prenotare</div>
+    <div class="room">
+      <div class="wall">
+        <div class="wall-label">Lato sinistro</div>
+        <div class="shelves-v" id="shelvesLeft"></div>
+      </div>
+      <div class="center">
+        <div class="center-text">↑ Ingresso</div>
+      </div>
+      <div class="wall">
+        <div class="wall-label">Lato destro</div>
+        <div class="shelves-v" id="shelvesRight"></div>
+      </div>
+      <div class="wall-bottom-wrap">
+        <div class="wall-bottom">
+          <div class="bottom-label">Parete di fondo</div>
+          <button type="button" class="shelf-wide free" id="btnFondo">
+            <span class="shelf-ind"></span>
+            <span class="shelf-id">FONDO</span>
+            <div class="shelf-detail">
+              <div class="sname">Nessuna prenotazione attiva</div>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="list-section">
+    <div class="list-header">
+      <div class="list-title">Prenotazioni attive</div>
+      <div class="filters">
+        <button class="filter-btn active" data-filter="all">Tutte</button>
+        <button class="filter-btn" data-filter="oggi">Oggi</button>
+        <button class="filter-btn" data-filter="settimana">Questa settimana</button>
+      </div>
+    </div>
+    <div class="booking-list" id="bookingList"><div class="empty">Caricamento…</div></div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="overlay" id="overlay">
+  <div class="modal" id="modalInner">
+    <h3 id="modalTitle">Scaffale</h3>
+    <p class="modal-sub">Camera di Crescita 4 — CNR-IBBR</p>
+    <div class="existing" id="existingBox" style="display:none">
+      <div class="existing-title">Prenotazioni in corso</div>
+      <div id="existingList"></div>
+    </div>
+    <div class="field">
+      <label>Il tuo nome</label>
+      <input type="text" id="inputUser" placeholder="es. Pasquale T.">
+    </div>
+    <div class="field">
+      <label>Esperimento / Descrizione</label>
+      <input type="text" id="inputName" placeholder="es. Pomodoro stress termico">
+    </div>
+    <div class="field">
+      <label>Dal</label>
+      <input type="date" id="inputStart">
+    </div>
+    <div class="field">
+      <label>Al</label>
+      <input type="date" id="inputEnd">
+    </div>
+    <div class="field">
+      <label>Note (opzionale)</label>
+      <input type="text" id="inputNote" placeholder="Condizioni, varietà…">
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn-cancel" id="btnCancel">Annulla</button>
+      <button type="button" class="btn-save" id="formSave">Prenota</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ════════════════ CONFIGURAZIONE ════════════════ -->
+<script>
+// Sostituisci i valori INSERISCI_* con quelli del tuo progetto Firebase
+var FIREBASE_CONFIG = {
+  apiKey:            "INSERISCI_API_KEY",
+  authDomain:        "INSERISCI_PROJECT.firebaseapp.com",
+  projectId:         "INSERISCI_PROJECT_ID",
+  storageBucket:     "INSERISCI_PROJECT.appspot.com",
+  messagingSenderId: "INSERISCI_SENDER_ID",
+  appId:             "INSERISCI_APP_ID"
+};
+
+// Scaffali: A1–A6 a sinistra, A7–A12 a destra
+var SHELVES_LEFT  = ["A1","A2","A3","A4","A5","A6"];
+var SHELVES_RIGHT = ["A7","A8","A9","A10","A11","A12"];
+var SHELF_BOTTOM  = "FONDO";
+</script>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<!-- ════════════════ LOGICA (eseguita a fine pagina) ════════════════ -->
+<script>
+(function() {
+  "use strict";
+
+  var bookings = [];
+  var currentShelf = null;
+  var activeFilter = "all";
+  var db = null;
+  var isFirebase = false;
+
+  // ── Avvio ──────────────────────────────────────────────────
+  function init() {
+    bindEvents();
+
+    var configured = FIREBASE_CONFIG.apiKey !== "INSERISCI_API_KEY";
+    if (configured && typeof firebase !== "undefined") {
+      try {
+        firebase.initializeApp(FIREBASE_CONFIG);
+        db = firebase.firestore();
+        isFirebase = true;
+        setSyncState("syncing", "Connessione…");
+        db.collection("bookings").onSnapshot(function(snap) {
+          bookings = snap.docs.map(function(d) {
+            return Object.assign({ id: d.id }, d.data());
+          });
+          renderAll();
+          setSyncState("ok", "Sincronizzato");
+        }, function() {
+          setSyncState("error", "Errore connessione");
+        });
+      } catch(e) {
+        fallbackLocal();
+      }
+    } else {
+      fallbackLocal();
+      document.getElementById("configNotice").style.display = "block";
+      setSyncState("error", "Dati locali");
+    }
+  }
+
+  function fallbackLocal() {
+    isFirebase = false;
+    try { bookings = JSON.parse(localStorage.getItem("cc4_bk") || "[]"); } catch(e) { bookings = []; }
+    renderAll();
+    setSyncState("error", "Dati locali");
+  }
+
+  function saveLocal() {
+    localStorage.setItem("cc4_bk", JSON.stringify(bookings));
+  }
+
+  // ── Event binding ──────────────────────────────────────────
+  function bindEvents() {
+    document.getElementById("btnFondo").addEventListener("click", function() {
+      openModal(SHELF_BOTTOM);
+    });
+    document.getElementById("btnCancel").addEventListener("click", closeModal);
+    document.getElementById("formSave").addEventListener("click", saveBooking);
+    document.getElementById("overlay").addEventListener("click", function(e) {
+      if (e.target === this) closeModal();
+    });
+    document.querySelectorAll(".filter-btn").forEach(function(btn) {
+      btn.addEventListener("click", function() {
+        activeFilter = btn.getAttribute("data-filter");
+        document.querySelectorAll(".filter-btn").forEach(function(b){ b.classList.remove("active"); });
+        btn.classList.add("active");
+        renderList();
+      });
+    });
+  }
+
+  // ── Helpers ────────────────────────────────────────────────
+  function today() { return new Date().toISOString().slice(0,10); }
+  function weekEnd() { var d=new Date(); d.setDate(d.getDate()+7); return d.toISOString().slice(0,10); }
+  function fmtDate(s) { if(!s) return ""; var p=s.split("-"); return p[2]+"/"+p[1]+"/"+p[0]; }
+
+  function shelfStatus(id) {
+    var t = today();
+    var a = bookings.filter(function(b){ return b.shelf===id && b.end>=t; });
+    if (!a.length) return "free";
+    if (a.length >= 2) return "busy";
+    return "partial";
+  }
+  function shelfFirstName(id) {
+    var t = today();
+    var a = bookings.filter(function(b){ return b.shelf===id && b.end>=t; });
+    return a.length ? a[0].name : "";
+  }
+  function shelfFirstDates(id) {
+    var t = today();
+    var a = bookings.filter(function(b){ return b.shelf===id && b.end>=t; });
+    return a.length ? fmtDate(a[0].start)+" → "+fmtDate(a[0].end) : "";
+  }
+
+  // ── Render ─────────────────────────────────────────────────
+  function renderAll() {
+    renderStats();
+    renderWall("shelvesLeft", SHELVES_LEFT);
+    renderWall("shelvesRight", SHELVES_RIGHT);
+    renderBottom();
+    renderList();
+    if (currentShelf) refreshExisting();
+  }
+
+  function renderStats() {
+    var all = SHELVES_LEFT.concat(SHELVES_RIGHT).concat([SHELF_BOTTOM]);
+    var f=0, p=0, b=0;
+    all.forEach(function(id) {
+      var s = shelfStatus(id);
+      if(s==="free") f++; else if(s==="partial") p++; else b++;
+    });
+    document.getElementById("statsRow").innerHTML =
+      '<div class="stat"><div class="stat-n free">'+f+'</div><div class="stat-l">Liberi</div></div>' +
+      '<div class="stat"><div class="stat-n partial">'+p+'</div><div class="stat-l">Parziali</div></div>' +
+      '<div class="stat"><div class="stat-n busy">'+b+'</div><div class="stat-l">Occupati</div></div>';
+  }
+
+  function renderWall(containerId, shelves) {
+    var c = document.getElementById(containerId);
+    c.innerHTML = "";
+    shelves.forEach(function(id) {
+      var st = shelfStatus(id);
+      var nm = shelfFirstName(id);
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "shelf " + st;
+      btn.innerHTML =
+        '<span class="shelf-ind"></span>' +
+        '<span class="shelf-id">' + id + '</span>' +
+        '<span class="shelf-name">' + (nm || "—") + '</span>';
+      btn.addEventListener("click", function(){ openModal(id); });
+      c.appendChild(btn);
+    });
+  }
+
+  function renderBottom() {
+    var id = SHELF_BOTTOM;
+    var st = shelfStatus(id);
+    var nm = shelfFirstName(id);
+    var dt = shelfFirstDates(id);
+    var btn = document.getElementById("btnFondo");
+    btn.className = "shelf-wide " + st;
+    btn.innerHTML =
+      '<span class="shelf-ind"></span>' +
+      '<span class="shelf-id">' + id + '</span>' +
+      '<div class="shelf-detail">' +
+        '<div class="sname">' + (nm || "Nessuna prenotazione attiva") + '</div>' +
+        (dt ? '<div class="smeta">' + dt + '</div>' : '') +
+      '</div>';
+  }
+
+  function renderList() {
+    var t = today(), wk = weekEnd();
+    var list = bookings.filter(function(b){ return b.end >= t; });
+    if (activeFilter === "oggi")
+      list = list.filter(function(b){ return b.start <= t && b.end >= t; });
+    if (activeFilter === "settimana")
+      list = list.filter(function(b){ return b.start <= wk && b.end >= t; });
+    list.sort(function(a,b){ return a.start.localeCompare(b.start); });
+
+    var c = document.getElementById("bookingList");
+    if (!list.length) {
+      c.innerHTML = '<div class="empty">Nessuna prenotazione attiva</div>';
+      return;
+    }
+    c.innerHTML = list.map(function(b) {
+      var st = shelfStatus(b.shelf);
+      var clr = st==="busy" ? "#c0392b" : st==="partial" ? "#c07a10" : "#4a9a3f";
+      var who = b.user ? ' &nbsp;·&nbsp; <em style="color:#aabaa5">'+b.user+'</em>' : '';
+      return '<div class="bk-item">' +
+        '<span class="bk-dot" style="background:'+clr+'"></span>' +
+        '<div class="bk-info">' +
+          '<div class="bk-name">'+b.name+'</div>' +
+          '<div class="bk-meta">Scaffale '+b.shelf+' &nbsp;·&nbsp; '+fmtDate(b.start)+' → '+fmtDate(b.end)+(b.note?' &nbsp;·&nbsp; '+b.note:'')+who+'</div>' +
+        '</div>' +
+        '<button class="bk-del" data-del="'+b.id+'">×</button>' +
+      '</div>';
+    }).join("");
+    c.querySelectorAll("[data-del]").forEach(function(btn) {
+      btn.addEventListener("click", function(){ confirmDelete(btn.getAttribute("data-del")); });
+    });
+  }
+
+  // ── Modal ──────────────────────────────────────────────────
+  function openModal(id) {
+    currentShelf = id;
+    document.getElementById("modalTitle").textContent = "Scaffale " + id;
+    document.getElementById("inputName").value = "";
+    document.getElementById("inputUser").value = "";
+    document.getElementById("inputNote").value = "";
+    document.getElementById("inputStart").value = today();
+    document.getElementById("inputEnd").value = "";
+    var save = document.getElementById("formSave");
+    save.disabled = false; save.textContent = "Prenota";
+    refreshExisting();
+    document.getElementById("overlay").classList.add("open");
+    setTimeout(function(){ document.getElementById("inputUser").focus(); }, 80);
+  }
+
+  function refreshExisting() {
+    var t = today();
+    var list = bookings.filter(function(b){ return b.shelf===currentShelf && b.end>=t; });
+    var box = document.getElementById("existingBox");
+    var el  = document.getElementById("existingList");
+    if (list.length) {
+      box.style.display = "block";
+      el.innerHTML = list.map(function(b){
+        var who = b.user ? ' ('+b.user+')' : '';
+        return '<div class="ex-item">' +
+          '<span>'+b.name+who+' · '+fmtDate(b.start)+'→'+fmtDate(b.end)+'</span>' +
+          '<button class="ex-del" data-del="'+b.id+'">×</button>' +
+        '</div>';
+      }).join("");
+      el.querySelectorAll("[data-del]").forEach(function(btn) {
+        btn.addEventListener("click", function(){ confirmDelete(btn.getAttribute("data-del")); });
+      });
+    } else {
+      box.style.display = "none";
+    }
+  }
+
+  function closeModal() {
+    document.getElementById("overlay").classList.remove("open");
+    currentShelf = null;
+  }
+
+  function saveBooking() {
+    var name  = document.getElementById("inputName").value.trim();
+    var user  = document.getElementById("inputUser").value.trim();
+    var start = document.getElementById("inputStart").value;
+    var end   = document.getElementById("inputEnd").value;
+    var note  = document.getElementById("inputNote").value.trim();
+    if (!user)  { alert("Inserisci il tuo nome."); return; }
+    if (!name)  { alert("Inserisci una descrizione dell'esperimento."); return; }
+    if (!start || !end) { alert("Seleziona le date di inizio e fine."); return; }
+    if (end < start) { alert("La data fine deve essere successiva alla data inizio."); return; }
+
+    var save = document.getElementById("formSave");
+    save.disabled = true; save.textContent = "Salvataggio…";
+
+    var data = { shelf: currentShelf, name: name, user: user, start: start, end: end, note: note, created: today() };
+
+    if (isFirebase) {
+      db.collection("bookings").add(data).then(function() {
+        closeModal();
+        showToast("Prenotazione salvata");
+      }).catch(function(e) {
+        save.disabled = false; save.textContent = "Prenota";
+        alert("Errore salvataggio: " + e.message);
+      });
+    } else {
+      data.id = "loc_" + Date.now();
+      bookings.push(data);
+      saveLocal();
+      renderAll();
+      closeModal();
+      showToast("Prenotazione salvata");
+    }
+  }
+
+  function confirmDelete(id) {
+    if (!confirm("Eliminare questa prenotazione?")) return;
+    if (isFirebase) {
+      db.collection("bookings").doc(id).delete().catch(function(e){ alert("Errore: "+e.message); });
+    } else {
+      bookings = bookings.filter(function(b){ return b.id !== id; });
+      saveLocal();
+      renderAll();
+    }
+    showToast("Prenotazione eliminata");
+  }
+
+  // ── UI feedback ────────────────────────────────────────────
+  function setSyncState(state, msg) {
+    var b = document.getElementById("syncBadge");
+    b.className = "sync-badge " + (state === "ok" ? "" : state);
+    b.innerHTML = '<span class="sync-dot"></span>' + msg;
+  }
+
+  function showToast(msg) {
+    var t = document.getElementById("toast");
+    t.textContent = msg; t.classList.add("show");
+    setTimeout(function(){ t.classList.remove("show"); }, 2800);
+  }
+
+  // Avvia quando il DOM è pronto
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+})();
+</script>
+</body>
+</html>
