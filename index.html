@@ -231,14 +231,14 @@ header p{font-size:13px;color:#6b7a65;margin-top:4px}
 
 <!-- ════════════════ CONFIGURAZIONE ════════════════ -->
 <script>
-// Sostituisci i valori INSERISCI_* con quelli del tuo progetto Firebase
+// Credenziali del progetto Firebase "camera-crescita4-cnr"
 var FIREBASE_CONFIG = {
-  apiKey:            "INSERISCI_API_KEY",
-  authDomain:        "INSERISCI_PROJECT.firebaseapp.com",
-  projectId:         "INSERISCI_PROJECT_ID",
-  storageBucket:     "INSERISCI_PROJECT.appspot.com",
-  messagingSenderId: "INSERISCI_SENDER_ID",
-  appId:             "INSERISCI_APP_ID"
+  apiKey:            "AIzaSyApF4MUNNiHxj7CofpptRoasqrMeZ4Z49A",
+  authDomain:        "camera-crescita4-cnr.firebaseapp.com",
+  projectId:         "camera-crescita4-cnr",
+  storageBucket:     "camera-crescita4-cnr.firebasestorage.app",
+  messagingSenderId: "332145848475",
+  appId:             "1:332145848475:web:ad20148110178b748d563e"
 };
 
 // Scaffali: A1–A6 a sinistra, A7–A12 a destra
@@ -266,7 +266,7 @@ var SHELF_BOTTOM  = "FONDO";
   function init() {
     bindEvents();
 
-    var configured = FIREBASE_CONFIG.apiKey !== "INSERISCI_API_KEY";
+    var configured = FIREBASE_CONFIG.apiKey.indexOf("INSERISCI") === -1 && FIREBASE_CONFIG.apiKey.length > 10;
     if (configured && typeof firebase !== "undefined") {
       try {
         firebase.initializeApp(FIREBASE_CONFIG);
