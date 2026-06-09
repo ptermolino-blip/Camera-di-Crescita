@@ -20,7 +20,7 @@ header p{font-size:13px;color:#6b7a65;margin-top:4px}
 .dot{width:9px;height:9px;border-radius:50%}
 .dot-free{background:#4a9a3f}.dot-partial{background:#c07a10}.dot-busy{background:#c0392b}
 
-.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1.5rem}
+.stats-row{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:1.5rem}
 .stat{background:#fff;border-radius:10px;border:1px solid #e2e8df;padding:14px;text-align:center}
 .stat-n{font-size:26px;font-weight:600}
 .stat-n.free{color:#4a9a3f}.stat-n.partial{color:#c07a10}.stat-n.busy{color:#c0392b}
@@ -135,7 +135,6 @@ header p{font-size:13px;color:#6b7a65;margin-top:4px}
     <span class="sync-badge syncing" id="syncBadge"><span class="sync-dot"></span>Avvio…</span>
     <div class="legend">
       <span><span class="dot dot-free"></span>Libero</span>
-      <span><span class="dot dot-partial"></span>Parziale</span>
       <span><span class="dot dot-busy"></span>Occupato</span>
     </div>
   </header>
@@ -331,9 +330,7 @@ var SHELF_BOTTOM  = "FONDO";
   function shelfStatus(id) {
     var t = today();
     var a = bookings.filter(function(b){ return b.shelf===id && b.end>=t; });
-    if (!a.length) return "free";
-    if (a.length >= 2) return "busy";
-    return "partial";
+    return a.length ? "busy" : "free";
   }
   function shelfFirstName(id) {
     var t = today();
@@ -358,14 +355,12 @@ var SHELF_BOTTOM  = "FONDO";
 
   function renderStats() {
     var all = SHELVES_LEFT.concat(SHELVES_RIGHT).concat([SHELF_BOTTOM]);
-    var f=0, p=0, b=0;
+    var f=0, b=0;
     all.forEach(function(id) {
-      var s = shelfStatus(id);
-      if(s==="free") f++; else if(s==="partial") p++; else b++;
+      if(shelfStatus(id)==="free") f++; else b++;
     });
     document.getElementById("statsRow").innerHTML =
       '<div class="stat"><div class="stat-n free">'+f+'</div><div class="stat-l">Liberi</div></div>' +
-      '<div class="stat"><div class="stat-n partial">'+p+'</div><div class="stat-l">Parziali</div></div>' +
       '<div class="stat"><div class="stat-n busy">'+b+'</div><div class="stat-l">Occupati</div></div>';
   }
 
@@ -419,7 +414,7 @@ var SHELF_BOTTOM  = "FONDO";
     }
     c.innerHTML = list.map(function(b) {
       var st = shelfStatus(b.shelf);
-      var clr = st==="busy" ? "#c0392b" : st==="partial" ? "#c07a10" : "#4a9a3f";
+      var clr = st==="busy" ? "#c0392b" : "#4a9a3f";
       var who = b.user ? ' &nbsp;·&nbsp; <em style="color:#aabaa5">'+b.user+'</em>' : '';
       return '<div class="bk-item">' +
         '<span class="bk-dot" style="background:'+clr+'"></span>' +
