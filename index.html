@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Camera di Crescita 4 — Prenotazioni</title>
+<title>Camere di Crescita — Prenotazioni</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Inter',system-ui,sans-serif;background:#f5f7f2;color:#1a1a1a;min-height:100vh}
@@ -20,6 +20,11 @@ header p{font-size:13px;color:#6b7a65;margin-top:4px}
 .dot{width:9px;height:9px;border-radius:50%}
 .dot-free{background:#4a9a3f}.dot-partial{background:#c07a10}.dot-busy{background:#c0392b}
 
+.camera-tabs{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:1.25rem}
+.camera-tab{font-size:13px;padding:7px 14px;border-radius:20px;border:1px solid #d5e0d0;background:#fff;color:#4a5a45;cursor:pointer;font-family:inherit}
+.camera-tab:hover{background:#f0f5ee}
+.camera-tab.active{background:#3a6b35;color:#fff;border-color:#3a6b35}
+
 .stats-row{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:1.5rem}
 .stat{background:#fff;border-radius:10px;border:1px solid #e2e8df;padding:14px;text-align:center}
 .stat-n{font-size:26px;font-weight:600}
@@ -30,13 +35,31 @@ header p{font-size:13px;color:#6b7a65;margin-top:4px}
 .room-title{font-size:11px;color:#9aaa95;letter-spacing:.06em;text-transform:uppercase;text-align:center;margin-bottom:1rem}
 .room{display:grid;grid-template-columns:160px 1fr 160px;grid-template-rows:auto auto;gap:10px}
 .wall{background:#f5f7f2;border:1px dashed #c8d8c4;border-radius:10px;padding:10px 8px}
+.side{display:flex;flex-direction:column;gap:10px}
+.side-left{grid-column:1/2;grid-row:1/2}
+.side-right{grid-column:3/4;grid-row:1/2}
 .wall-label{font-size:10px;color:#9aaa95;letter-spacing:.07em;text-transform:uppercase;text-align:center;margin-bottom:8px}
 .shelves-v{display:flex;flex-direction:column;gap:6px;align-items:center}
 .center{grid-column:2/3;grid-row:1/2;display:flex;align-items:center;justify-content:center}
 .center-text{font-size:12px;color:#b0bfaa;text-align:center}
-.wall-bottom-wrap{grid-column:1/4;grid-row:2/3}
-.wall-bottom{background:#f5f7f2;border:1px dashed #c8d8c4;border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:14px}
+.wall-bottom-wrap{grid-column:1/4;grid-row:2/3;display:flex;flex-direction:column;gap:10px}
+.wall-bottom-wrap.multi .bottom-label{min-width:130px}
+.wall-bottom{background:#f5f7f2;border:1px dashed #c8d8c4;border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 .bottom-label{font-size:10px;color:#9aaa95;letter-spacing:.07em;text-transform:uppercase;white-space:nowrap}
+/* Parete di fondo con molti slot: un'unica fila di riquadri compatti */
+.wall-bottom.grid-mode{flex-direction:column;flex-wrap:nowrap;align-items:stretch;gap:10px}
+.wall-bottom.grid-mode .bottom-label{text-align:center}
+.slot-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:8px}
+.slot-grid .shelf-wide{min-width:0;flex-direction:column;align-items:flex-start;gap:5px;padding:10px 12px}
+.slot-grid .shelf-wide .shelf-detail{width:100%}
+.slot-grid .shelf-wide .sname{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.slot-head{display:flex;align-items:center;gap:10px}
+/* Ripiano di fondo con 2-3 slot: sempre affiancati, di uguale larghezza */
+.slot-row{flex:1 1 300px;display:grid;gap:10px;min-width:0}
+.slot-row .shelf-wide{min-width:0}
+.slot-row .shelf-wide .sname{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.config-error{background:#fde8e8;border:1px solid #e0a0a0;border-radius:10px;padding:1rem 1.25rem;margin-bottom:1.5rem;font-size:13px;color:#7a1a1a}
+.config-error strong{display:block;margin-bottom:4px}
 
 .shelf{display:flex;align-items:center;gap:7px;width:140px;padding:9px 10px;border-radius:8px;border:1px solid #dde8da;background:#fff;cursor:pointer;font-family:inherit;transition:transform .1s,border-color .15s,background .15s}
 .shelf:hover{transform:scale(1.04);border-color:#8ab085}
@@ -52,7 +75,7 @@ header p{font-size:13px;color:#6b7a65;margin-top:4px}
 .shelf.partial .shelf-id{color:#8a5610}
 .shelf-name{font-size:10px;color:#7a8a76;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-.shelf-wide{display:flex;align-items:center;gap:10px;flex:1;padding:12px 16px;border-radius:8px;border:1px solid #dde8da;background:#fff;cursor:pointer;font-family:inherit;transition:transform .1s,border-color .15s,background .15s}
+.shelf-wide{display:flex;align-items:center;gap:10px;flex:1;min-width:180px;padding:12px 16px;border-radius:8px;border:1px solid #dde8da;background:#fff;cursor:pointer;font-family:inherit;transition:transform .1s,border-color .15s,background .15s}
 .shelf-wide:hover{transform:scale(1.01);border-color:#8ab085}
 .shelf-wide.free{border-color:#4a9a3f;background:#f0faf0}
 .shelf-wide.busy{border-color:#c0392b;background:#fdf0f0}
@@ -64,7 +87,7 @@ header p{font-size:13px;color:#6b7a65;margin-top:4px}
 .shelf-wide .shelf-id{font-size:13px;font-weight:600;color:#3a5e35}
 .shelf-wide.busy .shelf-id{color:#922020}
 .shelf-wide.partial .shelf-id{color:#8a5610}
-.shelf-wide .shelf-detail{flex:1;text-align:left}
+.shelf-wide .shelf-detail{flex:1;text-align:left;min-width:0}
 .shelf-wide .shelf-detail .sname{font-size:12px;color:#4a5a45;font-weight:500}
 .shelf-wide .shelf-detail .smeta{font-size:10px;color:#9aaa95;margin-top:2px}
 
@@ -117,9 +140,10 @@ header p{font-size:13px;color:#6b7a65;margin-top:4px}
 
 @media(max-width:600px){
   .room{grid-template-columns:1fr}
-  .wall{grid-column:1/2!important;grid-row:auto!important}
+  .side{grid-column:1/2!important;grid-row:auto!important}
+  .slot-row{grid-template-columns:1fr!important}
   .center{display:none}
-  .wall-bottom-wrap{grid-column:1/2!important}
+  .wall-bottom-wrap{grid-column:1/2!important;grid-row:auto!important}
   .shelves-v{flex-direction:row;flex-wrap:wrap;justify-content:center}
   .shelf{width:calc(50% - 4px)}
 }
@@ -130,7 +154,7 @@ header p{font-size:13px;color:#6b7a65;margin-top:4px}
 <!-- ════════════════ HTML ════════════════ -->
 <div class="page">
   <header>
-    <h1>Camera di Crescita 4 — Prenotazioni</h1>
+    <h1 id="pageTitle">Camere di Crescita — Prenotazioni</h1>
     <p>CNR-IBBR &nbsp;·&nbsp; Portici (NA)</p>
     <span class="sync-badge syncing" id="syncBadge"><span class="sync-dot"></span>Avvio…</span>
     <div class="legend">
@@ -146,35 +170,15 @@ header p{font-size:13px;color:#6b7a65;margin-top:4px}
     <a href="https://console.firebase.google.com" target="_blank" style="color:#6a4c00;font-weight:600"> → Firebase Console</a>
   </div>
 
+  <div class="config-error" id="configError" style="display:none"></div>
+
+  <nav class="camera-tabs" id="cameraTabs" style="display:none"></nav>
+
   <div class="stats-row" id="statsRow"></div>
 
   <div class="room-wrap">
     <div class="room-title">mappa scaffali — clicca per prenotare</div>
-    <div class="room">
-      <div class="wall">
-        <div class="wall-label">Lato sinistro</div>
-        <div class="shelves-v" id="shelvesLeft"></div>
-      </div>
-      <div class="center">
-        <div class="center-text">↑ Ingresso</div>
-      </div>
-      <div class="wall">
-        <div class="wall-label">Lato destro</div>
-        <div class="shelves-v" id="shelvesRight"></div>
-      </div>
-      <div class="wall-bottom-wrap">
-        <div class="wall-bottom">
-          <div class="bottom-label">Parete di fondo</div>
-          <button type="button" class="shelf-wide free" id="btnFondo">
-            <span class="shelf-ind"></span>
-            <span class="shelf-id">FONDO</span>
-            <div class="shelf-detail">
-              <div class="sname">Nessuna prenotazione attiva</div>
-            </div>
-          </button>
-        </div>
-      </div>
-    </div>
+    <div class="room" id="roomMap"></div>
   </div>
 
   <div class="list-section">
@@ -194,7 +198,7 @@ header p{font-size:13px;color:#6b7a65;margin-top:4px}
 <div class="overlay" id="overlay">
   <div class="modal" id="modalInner">
     <h3 id="modalTitle">Scaffale</h3>
-    <p class="modal-sub">Camera di Crescita 4 — CNR-IBBR</p>
+    <p class="modal-sub" id="modalSub">CNR-IBBR</p>
     <div class="existing" id="existingBox" style="display:none">
       <div class="existing-title">Prenotazioni in corso</div>
       <div id="existingList"></div>
@@ -240,10 +244,61 @@ var FIREBASE_CONFIG = {
   appId:             "1:332145848475:web:ad20148110178b748d563e"
 };
 
-// Scaffali: A1–A6 a sinistra, A7–A12 a destra
-var SHELVES_LEFT  = ["A1","A2","A3","A4","A5","A6"];
-var SHELVES_RIGHT = ["A7","A8","A9","A10","A11","A12"];
-var SHELF_BOTTOM  = "FONDO";
+// ── Camere ──────────────────────────────────────────────────
+// PER AGGIUNGERE UNA CAMERA: copia uno dei blocchi { ... } qui sotto, incollalo
+// in fondo all'elenco (separato da una virgola) e modificalo. Non serve toccare
+// nient'altro nel file. L'ordine dell'elenco è l'ordine delle schede.
+//
+//   id        codice breve usato nel link (…/?camera=<id>)
+//   nome      titolo mostrato in alto nella pagina
+//   breve     testo della scheda (facoltativo; se manca si usa "nome")
+//   centro    testo al centro della mappa (es. "↑ Ingresso")
+//   sinistra, destra   scaffali in colonna lungo le pareti laterali
+//   fondo     slot larghi in riga lungo la parete di fondo
+//
+// Ogni parete ha un ripiano:
+//   { etichetta: "Lato sinistro", slot: ["A1","A2"] }
+// oppure più ripiani separati, scritti come elenco tra parentesi quadre:
+//   [ { etichetta: "Ripiano superiore", slot: ["A1","A2"] },
+//     { etichetta: "Ripiano inferiore", slot: ["A3","A4"] } ]
+// Le pareti che non servono si omettono.
+//
+// ATTENZIONE: non cambiare "id" della camera né i nomi degli slot quando esistono
+// già prenotazioni: le prenotazioni vi fanno riferimento e non comparirebbero più
+// sulla mappa. I nomi degli slot devono essere diversi tra loro nella stessa camera.
+var CAMERE = [
+  {
+    id: "4",
+    nome: "Camera di Crescita 4",
+    breve: "Camera 4",
+    centro: "↑ Ingresso",
+    sinistra: { etichetta: "Lato sinistro",   slot: ["A1","A2","A3","A4","A5","A6"] },
+    destra:   { etichetta: "Lato destro",     slot: ["A7","A8","A9","A10","A11","A12"] },
+    fondo:    { etichetta: "Parete di fondo", slot: ["FONDO"] }
+  },
+  {
+    id: "25",
+    nome: "Camera di Crescita 25",
+    breve: "Camera 25",
+    centro: "↑ Ingresso",
+    sinistra: { etichetta: "Banco sinistro", slot: ["A1","A2","A3","A4"] },
+    destra:   { etichetta: "Banco destro",   slot: ["A5","A6","A7","A8"] }
+  },
+  {
+    id: "26",
+    nome: "Camera di Crescita 26",
+    breve: "Camera 26",
+    centro: "↑ Ingresso",
+    fondo: [
+      { etichetta: "Ripiano superiore", slot: ["A1","A2","A3"] },
+      { etichetta: "Ripiano inferiore", slot: ["A4","A5","A6"] }
+    ]
+  }
+];
+
+// Le prenotazioni create prima della versione multi-camera non hanno il campo
+// "camera": vengono attribuite a questa camera.
+var CAMERA_PREDEFINITA = "4";
 </script>
 
 <!-- Firebase SDK -->
@@ -255,15 +310,23 @@ var SHELF_BOTTOM  = "FONDO";
 (function() {
   "use strict";
 
-  var bookings = [];
+  var allBookings = [];    // tutte le prenotazioni, di tutte le camere
+  var bookings = [];       // solo quelle della camera visualizzata
+  var camera = null;       // camera visualizzata (oggetto da CAMERE)
   var currentShelf = null;
   var activeFilter = "all";
   var db = null;
   var isFirebase = false;
+  var loaded = false;      // diventa true quando arrivano i dati (Firebase o locali)
+  var LOCAL_KEY = "cc4_bk";
 
   // ── Avvio ──────────────────────────────────────────────────
   function init() {
+    checkConfig();
+    selectCamera(initialCameraId(), false);
+    renderTabs();
     bindEvents();
+    renderAll();   // mostra subito la mappa, anche prima che arrivino i dati
 
     var configured = FIREBASE_CONFIG.apiKey.indexOf("INSERISCI") === -1 && FIREBASE_CONFIG.apiKey.length > 10;
     if (configured && typeof firebase !== "undefined") {
@@ -273,13 +336,16 @@ var SHELF_BOTTOM  = "FONDO";
         isFirebase = true;
         setSyncState("syncing", "Connessione…");
         db.collection("bookings").onSnapshot(function(snap) {
-          bookings = snap.docs.map(function(d) {
+          allBookings = snap.docs.map(function(d) {
             return Object.assign({ id: d.id }, d.data());
           });
+          loaded = true;
           renderAll();
           setSyncState("ok", "Sincronizzato");
         }, function() {
           setSyncState("error", "Errore connessione");
+          document.getElementById("bookingList").innerHTML =
+            '<div class="empty">Impossibile caricare le prenotazioni dal database.</div>';
         });
       } catch(e) {
         fallbackLocal();
@@ -287,26 +353,207 @@ var SHELF_BOTTOM  = "FONDO";
     } else {
       fallbackLocal();
       document.getElementById("configNotice").style.display = "block";
-      setSyncState("error", "Dati locali");
     }
   }
 
   function fallbackLocal() {
     isFirebase = false;
-    try { bookings = JSON.parse(localStorage.getItem("cc4_bk") || "[]"); } catch(e) { bookings = []; }
+    try { allBookings = JSON.parse(localStorage.getItem(LOCAL_KEY) || "[]"); } catch(e) { allBookings = []; }
+    loaded = true;
     renderAll();
     setSyncState("error", "Dati locali");
   }
 
   function saveLocal() {
-    localStorage.setItem("cc4_bk", JSON.stringify(bookings));
+    try { localStorage.setItem(LOCAL_KEY, JSON.stringify(allBookings)); } catch(e) {}
+  }
+
+  // ── Camere ─────────────────────────────────────────────────
+  function findCamera(id) {
+    for (var i = 0; i < CAMERE.length; i++) if (CAMERE[i].id === id) return CAMERE[i];
+    return null;
+  }
+
+  // Priorità: link (?camera=…), poi ultima camera aperta su questo browser, poi la prima.
+  function initialCameraId() {
+    var fromUrl = null;
+    try { fromUrl = new URLSearchParams(location.search).get("camera"); } catch(e) {}
+    if (fromUrl && findCamera(fromUrl)) return fromUrl;
+    var last = null;
+    try { last = localStorage.getItem("cc_camera"); } catch(e) {}
+    if (last && findCamera(last)) return last;
+    return CAMERE[0].id;
+  }
+
+  function selectCamera(id, updateUrl) {
+    camera = findCamera(id) || CAMERE[0];
+    try { localStorage.setItem("cc_camera", camera.id); } catch(e) {}
+    if (updateUrl && CAMERE.length > 1) {
+      try { history.replaceState(null, "", "?camera=" + encodeURIComponent(camera.id)); } catch(e) {}
+    }
+    document.getElementById("pageTitle").textContent = camera.nome + " — Prenotazioni";
+    document.title = camera.nome + " — Prenotazioni";
+    document.getElementById("modalSub").textContent = camera.nome + " — CNR-IBBR";
+  }
+
+  function cameraOf(b) { return b.camera || CAMERA_PREDEFINITA; }
+
+  function renderTabs() {
+    var nav = document.getElementById("cameraTabs");
+    if (CAMERE.length < 2) { nav.style.display = "none"; return; }
+    nav.style.display = "flex";
+    nav.innerHTML = "";
+    CAMERE.forEach(function(c) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "camera-tab" + (c.id === camera.id ? " active" : "");
+      btn.textContent = c.breve || c.nome;
+      btn.addEventListener("click", function() {
+        if (c.id === camera.id) return;
+        selectCamera(c.id, true);
+        renderTabs();
+        renderAll();
+      });
+      nav.appendChild(btn);
+    });
+  }
+
+  var PARETI = ["sinistra", "destra", "fondo"];
+
+  // Una parete può avere un ripiano { ... } o un elenco di ripiani [ {...}, {...} ];
+  // qui la trasformo sempre in elenco.
+  function ripianiOf(cam, parete) {
+    var p = cam[parete];
+    if (!p) return [];
+    return Array.isArray(p) ? p : [p];
+  }
+
+  function shelvesOf(cam) {
+    var s = [];
+    PARETI.forEach(function(k) {
+      ripianiOf(cam, k).forEach(function(r) { s = s.concat(r.slot || []); });
+    });
+    return s;
+  }
+  function allShelves() { return shelvesOf(camera); }
+
+  // Controlla la configurazione e segnala gli errori più comuni in cima alla pagina
+  function checkConfig() {
+    var errs = [], ids = {};
+    CAMERE.forEach(function(c, i) {
+      if (!c.id) { errs.push("La camera n. " + (i+1) + " non ha un id."); return; }
+      if (ids[c.id]) errs.push('Due camere hanno lo stesso id "' + c.id + '".');
+      ids[c.id] = true;
+      var seen = {};
+      shelvesOf(c).forEach(function(s) {
+        if (seen[s]) errs.push(c.nome + ': lo slot "' + s + '" compare due volte.');
+        seen[s] = true;
+      });
+      if (!shelvesOf(c).length) errs.push(c.nome + ": nessuno slot definito.");
+    });
+    if (errs.length) {
+      var box = document.getElementById("configError");
+      box.innerHTML = "<strong>Errore nella configurazione delle camere</strong>" +
+        errs.map(esc).join("<br>");
+      box.style.display = "block";
+    }
+  }
+
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+
+  // Disegna la mappa della camera corrente
+  function renderRoom() {
+    var room = document.getElementById("roomMap");
+    room.innerHTML = "";
+    var left = ripianiOf(camera, "sinistra"), right = ripianiOf(camera, "destra"), back = ripianiOf(camera, "fondo");
+    if (left.length) room.appendChild(sideWall(left, "side-left"));
+    var center = el("div", "center");
+    center.appendChild(el("div", "center-text", camera.centro || ""));
+    room.appendChild(center);
+    if (right.length) room.appendChild(sideWall(right, "side-right"));
+    if (back.length) room.appendChild(backWall(back));
+  }
+
+  // Parete laterale: uno o più ripiani in colonna
+  function sideWall(ripiani, cls) {
+    var side = el("div", "side " + cls);
+    ripiani.forEach(function(r) {
+      var w = el("div", "wall");
+      w.appendChild(el("div", "wall-label", r.etichetta || ""));
+      var col = el("div", "shelves-v");
+      (r.slot || []).forEach(function(id) { col.appendChild(shelfButton(id)); });
+      w.appendChild(col);
+      side.appendChild(w);
+    });
+    return side;
+  }
+
+  // Parete di fondo: uno o più ripiani, uno sotto l'altro
+  function backWall(ripiani) {
+    var wrap = el("div", "wall-bottom-wrap" + (ripiani.length > 1 ? " multi" : ""));
+    ripiani.forEach(function(r) {
+      var slots = r.slot || [];
+      var w = el("div", "wall-bottom");
+      w.appendChild(el("div", "bottom-label", r.etichetta || ""));
+      if (slots.length > 3) {
+        // molti slot: etichetta sopra, riquadri compatti in griglia
+        w.classList.add("grid-mode");
+        var grid = el("div", "slot-grid");
+        slots.forEach(function(id) { grid.appendChild(wideButton(id, true)); });
+        w.appendChild(grid);
+      } else if (slots.length > 1) {
+        // 2-3 slot: in fila accanto all'etichetta, colonne uguali
+        var row = el("div", "slot-row");
+        row.style.gridTemplateColumns = "repeat(" + slots.length + ", minmax(0, 1fr))";
+        slots.forEach(function(id) { row.appendChild(wideButton(id, true)); });
+        w.appendChild(row);
+      } else {
+        // un solo slot (es. FONDO della Camera 4): riquadro largo
+        slots.forEach(function(id) { w.appendChild(wideButton(id)); });
+      }
+      wrap.appendChild(w);
+    });
+    return wrap;
+  }
+
+  // Slot compatto (pareti laterali)
+  function shelfButton(id) {
+    var nm = shelfFirstName(id);
+    var btn = el("button", "shelf " + shelfStatus(id));
+    btn.type = "button";
+    btn.appendChild(el("span", "shelf-ind"));
+    btn.appendChild(el("span", "shelf-id", id));
+    btn.appendChild(el("span", "shelf-name", nm || "—"));
+    btn.addEventListener("click", function(){ openModal(id); });
+    return btn;
+  }
+
+  // Slot largo (parete di fondo): mostra anche le date. "compatto" = riquadro in griglia
+  function wideButton(id, compatto) {
+    var nm = shelfFirstName(id);
+    var dt = shelfFirstDates(id);
+    var btn = el("button", "shelf-wide " + shelfStatus(id));
+    btn.type = "button";
+    var head = el("span", "slot-head");
+    head.appendChild(el("span", "shelf-ind"));
+    head.appendChild(el("span", "shelf-id", id));
+    btn.appendChild(head);
+    var det = el("div", "shelf-detail");
+    det.appendChild(el("div", "sname", nm || (compatto ? "Libero" : "Nessuna prenotazione attiva")));
+    if (nm) btn.title = nm;
+    if (dt) det.appendChild(el("div", "smeta", dt));
+    btn.appendChild(det);
+    btn.addEventListener("click", function(){ openModal(id); });
+    return btn;
   }
 
   // ── Event binding ──────────────────────────────────────────
   function bindEvents() {
-    document.getElementById("btnFondo").addEventListener("click", function() {
-      openModal(SHELF_BOTTOM);
-    });
     document.getElementById("btnCancel").addEventListener("click", closeModal);
     document.getElementById("formSave").addEventListener("click", saveBooking);
     document.getElementById("overlay").addEventListener("click", function(e) {
@@ -323,79 +570,46 @@ var SHELF_BOTTOM  = "FONDO";
   }
 
   // ── Helpers ────────────────────────────────────────────────
-  function today() { return new Date().toISOString().slice(0,10); }
-  function weekEnd() { var d=new Date(); d.setDate(d.getDate()+7); return d.toISOString().slice(0,10); }
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  // Data locale (non UTC), così dopo mezzanotte il "giorno" è già quello giusto
+  function isoLocal(d) { return d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate()); }
+  function today() { return isoLocal(new Date()); }
+  function weekEnd() { var d=new Date(); d.setDate(d.getDate()+7); return isoLocal(d); }
   function fmtDate(s) { if(!s) return ""; var p=s.split("-"); return p[2]+"/"+p[1]+"/"+p[0]; }
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function(c) {
+      return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c];
+    });
+  }
 
-  function shelfStatus(id) {
+  function activeOn(id) {
     var t = today();
-    var a = bookings.filter(function(b){ return b.shelf===id && b.end>=t; });
-    return a.length ? "busy" : "free";
+    return bookings.filter(function(b){ return b.shelf===id && b.end>=t; });
   }
-  function shelfFirstName(id) {
-    var t = today();
-    var a = bookings.filter(function(b){ return b.shelf===id && b.end>=t; });
-    return a.length ? a[0].name : "";
-  }
+  function shelfStatus(id) { return activeOn(id).length ? "busy" : "free"; }
+  function shelfFirstName(id) { var a = activeOn(id); return a.length ? a[0].name : ""; }
   function shelfFirstDates(id) {
-    var t = today();
-    var a = bookings.filter(function(b){ return b.shelf===id && b.end>=t; });
+    var a = activeOn(id);
     return a.length ? fmtDate(a[0].start)+" → "+fmtDate(a[0].end) : "";
   }
 
   // ── Render ─────────────────────────────────────────────────
   function renderAll() {
+    bookings = allBookings.filter(function(b){ return cameraOf(b) === camera.id; });
     renderStats();
-    renderWall("shelvesLeft", SHELVES_LEFT);
-    renderWall("shelvesRight", SHELVES_RIGHT);
-    renderBottom();
+    renderRoom();
     renderList();
     if (currentShelf) refreshExisting();
   }
 
   function renderStats() {
-    var all = SHELVES_LEFT.concat(SHELVES_RIGHT).concat([SHELF_BOTTOM]);
     var f=0, b=0;
-    all.forEach(function(id) {
+    allShelves().forEach(function(id) {
       if(shelfStatus(id)==="free") f++; else b++;
     });
     document.getElementById("statsRow").innerHTML =
       '<div class="stat"><div class="stat-n free">'+f+'</div><div class="stat-l">Liberi</div></div>' +
       '<div class="stat"><div class="stat-n busy">'+b+'</div><div class="stat-l">Occupati</div></div>';
-  }
-
-  function renderWall(containerId, shelves) {
-    var c = document.getElementById(containerId);
-    c.innerHTML = "";
-    shelves.forEach(function(id) {
-      var st = shelfStatus(id);
-      var nm = shelfFirstName(id);
-      var btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "shelf " + st;
-      btn.innerHTML =
-        '<span class="shelf-ind"></span>' +
-        '<span class="shelf-id">' + id + '</span>' +
-        '<span class="shelf-name">' + (nm || "—") + '</span>';
-      btn.addEventListener("click", function(){ openModal(id); });
-      c.appendChild(btn);
-    });
-  }
-
-  function renderBottom() {
-    var id = SHELF_BOTTOM;
-    var st = shelfStatus(id);
-    var nm = shelfFirstName(id);
-    var dt = shelfFirstDates(id);
-    var btn = document.getElementById("btnFondo");
-    btn.className = "shelf-wide " + st;
-    btn.innerHTML =
-      '<span class="shelf-ind"></span>' +
-      '<span class="shelf-id">' + id + '</span>' +
-      '<div class="shelf-detail">' +
-        '<div class="sname">' + (nm || "Nessuna prenotazione attiva") + '</div>' +
-        (dt ? '<div class="smeta">' + dt + '</div>' : '') +
-      '</div>';
   }
 
   function renderList() {
@@ -408,6 +622,10 @@ var SHELF_BOTTOM  = "FONDO";
     list.sort(function(a,b){ return a.start.localeCompare(b.start); });
 
     var c = document.getElementById("bookingList");
+    if (!loaded) {
+      c.innerHTML = '<div class="empty">Caricamento…</div>';
+      return;
+    }
     if (!list.length) {
       c.innerHTML = '<div class="empty">Nessuna prenotazione attiva</div>';
       return;
@@ -415,14 +633,14 @@ var SHELF_BOTTOM  = "FONDO";
     c.innerHTML = list.map(function(b) {
       var st = shelfStatus(b.shelf);
       var clr = st==="busy" ? "#c0392b" : "#4a9a3f";
-      var who = b.user ? ' &nbsp;·&nbsp; <em style="color:#aabaa5">'+b.user+'</em>' : '';
+      var who = b.user ? ' &nbsp;·&nbsp; <em style="color:#aabaa5">'+esc(b.user)+'</em>' : '';
       return '<div class="bk-item">' +
         '<span class="bk-dot" style="background:'+clr+'"></span>' +
         '<div class="bk-info">' +
-          '<div class="bk-name">'+b.name+'</div>' +
-          '<div class="bk-meta">Scaffale '+b.shelf+' &nbsp;·&nbsp; '+fmtDate(b.start)+' → '+fmtDate(b.end)+(b.note?' &nbsp;·&nbsp; '+b.note:'')+who+'</div>' +
+          '<div class="bk-name">'+esc(b.name)+'</div>' +
+          '<div class="bk-meta">Scaffale '+esc(b.shelf)+' &nbsp;·&nbsp; '+fmtDate(b.start)+' → '+fmtDate(b.end)+(b.note?' &nbsp;·&nbsp; '+esc(b.note):'')+who+'</div>' +
         '</div>' +
-        '<button class="bk-del" data-del="'+b.id+'">×</button>' +
+        '<button class="bk-del" data-del="'+esc(b.id)+'">×</button>' +
       '</div>';
     }).join("");
     c.querySelectorAll("[data-del]").forEach(function(btn) {
@@ -447,17 +665,16 @@ var SHELF_BOTTOM  = "FONDO";
   }
 
   function refreshExisting() {
-    var t = today();
-    var list = bookings.filter(function(b){ return b.shelf===currentShelf && b.end>=t; });
+    var list = activeOn(currentShelf);
     var box = document.getElementById("existingBox");
     var el  = document.getElementById("existingList");
     if (list.length) {
       box.style.display = "block";
       el.innerHTML = list.map(function(b){
-        var who = b.user ? ' ('+b.user+')' : '';
+        var who = b.user ? ' ('+esc(b.user)+')' : '';
         return '<div class="ex-item">' +
-          '<span>'+b.name+who+' · '+fmtDate(b.start)+'→'+fmtDate(b.end)+'</span>' +
-          '<button class="ex-del" data-del="'+b.id+'">×</button>' +
+          '<span>'+esc(b.name)+who+' · '+fmtDate(b.start)+'→'+fmtDate(b.end)+'</span>' +
+          '<button class="ex-del" data-del="'+esc(b.id)+'">×</button>' +
         '</div>';
       }).join("");
       el.querySelectorAll("[data-del]").forEach(function(btn) {
@@ -487,7 +704,7 @@ var SHELF_BOTTOM  = "FONDO";
     var save = document.getElementById("formSave");
     save.disabled = true; save.textContent = "Salvataggio…";
 
-    var data = { shelf: currentShelf, name: name, user: user, start: start, end: end, note: note, created: today() };
+    var data = { camera: camera.id, shelf: currentShelf, name: name, user: user, start: start, end: end, note: note, created: today() };
 
     if (isFirebase) {
       db.collection("bookings").add(data).then(function() {
@@ -499,7 +716,7 @@ var SHELF_BOTTOM  = "FONDO";
       });
     } else {
       data.id = "loc_" + Date.now();
-      bookings.push(data);
+      allBookings.push(data);
       saveLocal();
       renderAll();
       closeModal();
@@ -510,13 +727,15 @@ var SHELF_BOTTOM  = "FONDO";
   function confirmDelete(id) {
     if (!confirm("Eliminare questa prenotazione?")) return;
     if (isFirebase) {
-      db.collection("bookings").doc(id).delete().catch(function(e){ alert("Errore: "+e.message); });
+      db.collection("bookings").doc(id).delete().then(function() {
+        showToast("Prenotazione eliminata");
+      }).catch(function(e){ alert("Errore: "+e.message); });
     } else {
-      bookings = bookings.filter(function(b){ return b.id !== id; });
+      allBookings = allBookings.filter(function(b){ return b.id !== id; });
       saveLocal();
       renderAll();
+      showToast("Prenotazione eliminata");
     }
-    showToast("Prenotazione eliminata");
   }
 
   // ── UI feedback ────────────────────────────────────────────
